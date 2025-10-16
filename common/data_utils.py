@@ -6,6 +6,7 @@
 
 Functions:
     load_deepcf_data: DeepCF 형식의 데이터 로드
+    load_cornac_data_with_full_space: Cornac용 데이터 로드 (전체 item 공간 유지)
     deepcf_to_uir: DeepCF 형식을 Cornac UIR 튜플로 변환
     get_train_matrix: 희소 행렬을 밀집 numpy 배열로 변환
 """
@@ -71,6 +72,69 @@ def load_deepcf_data(data_path, dataset_name):
                 testNegatives.append(negatives)
 
     return train_matrix, testRatings, testNegatives, num_users + 1, num_items + 1
+
+
+def load_cornac_data_with_full_space(data_path, dataset_name):
+    """
+    Cornac 평가를 위해 전체 item 공간을 유지하며 데이터를 로드합니다.
+
+    이 함수는 DeepCF의 load_deepcf_data()와 동일한 방식으로 전체 item 공간을 계산합니다.
+    Train과 Test 파일을 모두 읽어 전체 user/item ID를 추적하여 num_items를 결정합니다.
+
+    **중요**: Cornac의 RatioSplit은 train set의 item 수만 사용하지만,
+    이 함수는 train+test의 전체 item 공간을 반영하여 pretrain 모델과 차원을 일치시킵니다.
+
+    Args:
+        data_path (str): 데이터 디렉토리 경로
+        dataset_name (str): 데이터셋 이름 (예: 'ml-1m', 'ml-1m-sample100')
+
+    Returns:
+        tuple: (train_data, test_data, num_users, num_items)
+            - train_data: [(user_id, item_id, rating), ...] for train
+            - test_data: [(user_id, item_id, rating), ...] for test
+            - num_users: 전체 유저 수
+            - num_items: 전체 아이템 수 (train + test에 나타난 모든 item)
+
+    Example:
+        >>> train_data, test_data, num_users, num_items = load_cornac_data_with_full_space(
+        ...     '../datasets/', 'ml-1m-sample100'
+        ... )
+        >>> print(f"Users: {num_users}, Items: {num_items}")
+        Users: 100, Items: 2591
+    """
+    train_file = f"{data_path}{dataset_name}.train.rating"
+    test_file = f"{data_path}{dataset_name}.test.rating"
+
+    # 전체 user/item ID 추적
+    all_users = set()
+    all_items = set()
+
+    # Train data 읽기
+    train_data = []
+    with open(train_file, 'r') as f:
+        for line in f:
+            if line.strip():
+                parts = line.strip().split('\t')
+                user_id, item_id, rating = parts[0], parts[1], float(parts[2])
+                train_data.append((user_id, item_id, rating))
+                all_users.add(user_id)
+                all_items.add(item_id)
+
+    # Test data 읽기
+    test_data = []
+    with open(test_file, 'r') as f:
+        for line in f:
+            if line.strip():
+                parts = line.strip().split('\t')
+                user_id, item_id, rating = parts[0], parts[1], float(parts[2])
+                test_data.append((user_id, item_id, rating))
+                all_users.add(user_id)
+                all_items.add(item_id)  # ← 핵심: test에만 있는 item도 포함!
+
+    num_users = len(all_users)
+    num_items = len(all_items)
+
+    return train_data, test_data, num_users, num_items
 
 
 def deepcf_to_uir(train_file, test_file):

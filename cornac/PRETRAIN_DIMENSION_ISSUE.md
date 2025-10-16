@@ -1,8 +1,38 @@
 # Cornac Pretrain 차원 불일치 문제
 
-## 📌 문제 요약
+## ✅ 해결 완료 (2025-10-16)
 
-`cornac_eval.ipynb`에서 CFNet-pretrain 모델을 사용할 때 다음과 같은 에러가 발생합니다:
+**적용된 방안**: 방안 1 - Cornac도 전체 item 수로 모델 생성
+
+### 구현 내용
+
+1. **`common/data_utils.py`에 `load_cornac_data_with_full_space()` 함수 추가**
+   - Train과 Test 파일을 모두 읽어 전체 user/item ID 추적
+   - Test에만 있는 item도 `num_items`에 반영
+   - DeepCF의 `load_deepcf_data()`와 동일한 방식으로 전체 item 공간 계산
+
+2. **`cornac/cornac_eval.ipynb` 수정**
+   - Cell 4: `load_cornac_data_with_full_space` import 추가
+   - Cell 6: 커스텀 데이터 로딩으로 변경 (전체 item 공간 유지)
+   - Cell 8: `BaseMethod.from_splits`를 사용한 커스텀 평가 방법 설정
+   - Cell 2: `INCLUDE_CFNet_PRETRAIN = True`로 활성화
+
+3. **결과**
+   - ✅ Train set items: 2591 (이전: 2462)
+   - ✅ Test set items: 2591
+   - ✅ Pretrain 모델과 차원 일치
+   - ✅ CFNet-pretrain 정상 동작
+   - ✅ DeepCF 논문과 동일한 평가 방식 적용
+
+### 변경된 파일
+- `common/data_utils.py`: 새 함수 추가 (77-137행)
+- `cornac/cornac_eval.ipynb`: Cell 2, 4, 6, 8 수정
+
+---
+
+## 📌 원래 문제 요약 (참고용)
+
+`cornac_eval.ipynb`에서 CFNet-pretrain 모델을 사용할 때 다음과 같은 에러가 발생했었습니다:
 
 ```
 RuntimeError: The size of tensor a (2462) must match the size of tensor b (2591) at non-singleton dimension 1
