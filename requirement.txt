@@ -1,0 +1,12 @@
+# Core PyTorch packages for CPU
+torch
+torchvision
+torchaudio
+
+# Data handling and processing
+numpy
+pandas
+scikit-learn
+matplotlib
+
+cornac
