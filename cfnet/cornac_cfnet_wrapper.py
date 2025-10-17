@@ -156,20 +156,53 @@ class CornacCFNet(Recommender):
             np.random.seed(self.seed)
 
         # Cornac train_set을 numpy 배열로 변환
+        # train_set.matrix는 실제 train 데이터만 포함하므로,
+        # train_set.num_items (전체 item 공간) 크기로 확장 필요
         train_matrix_sparse = train_set.matrix.todok()
-        train_matrix = get_train_matrix(train_matrix_sparse)
+
+        num_users = train_set.num_users
+
+        # ============================================================
+        # Pretrain 모델 사용 시: pretrained 모델의 차원을 사용
+        # Pretrain 미사용 시: train_set.num_items 사용
+        # ============================================================
+        if self.dmf_pretrain_path is not None:
+            # Pretrained 모델에서 실제 item 차원 추출
+            dmf_state = torch.load(self.dmf_pretrain_path, map_location='cpu')
+            pretrain_num_items = dmf_state['user_layers.0.weight'].shape[1]
+            num_items = pretrain_num_items
+
+            if self.verbose:
+                print(f"\n[{self.name}] Using pretrained model dimensions:")
+                print(f"  - Pretrained num_items: {pretrain_num_items}")
+                print(f"  - Train set num_items: {train_set.num_items}")
+                if pretrain_num_items != train_set.num_items:
+                    print(f"  ⚠️  Dimension mismatch detected - using pretrained dimension ({pretrain_num_items})")
+        else:
+            # Pretrain 미사용 시 train_set의 차원 사용
+            num_items = train_set.num_items
+
+        # train_matrix 생성 (pretrain 차원 또는 train_set 차원 사용)
+        train_matrix = np.zeros([num_users, num_items], dtype=np.int32)
+
+        # 실제 train 데이터 복사
+        for (u, i) in train_matrix_sparse.keys():
+            train_matrix[u][i] = 1
 
         # CFNet 모델 초기화 (pretrain 경로가 있으면 자동 로드)
         self.cfnet_model = CFNet(
             train_matrix,
-            train_set.num_users,
-            train_set.num_items,
+            num_users,
+            num_items,  # pretrain 사용 시 pretrained 차원, 아니면 train_set 차원
             self.userlayers,
             self.itemlayers,
             self.layers,
             dmf_pretrain_path=self.dmf_pretrain_path,
             mlp_pretrain_path=self.mlp_pretrain_path
         ).to(self.device)
+
+        # 모델의 item 차원을 인스턴스 변수로 저장 (score 함수에서 사용)
+        self.model_num_items = num_items
 
         # Pretrain 사용 여부 출력
         if self.verbose:
@@ -209,7 +242,7 @@ class CornacCFNet(Recommender):
             user_input, item_input, labels = get_train_instances(
                 train_matrix_sparse,
                 self.num_neg,
-                train_set.num_items
+                num_items  # 모델과 동일한 item 차원 사용
             )
 
             train_dataset = TrainDataset(user_input, item_input, labels)
@@ -262,7 +295,7 @@ class CornacCFNet(Recommender):
             if user_idx >= self.train_set.num_users:
                 raise ScoreException(f"Unknown user: {user_idx}")
 
-            item_indices = torch.arange(self.train_set.num_items, dtype=torch.long).to(self.device)
+            item_indices = torch.arange(self.model_num_items, dtype=torch.long).to(self.device)
             user_indices = torch.full_like(item_indices, user_idx)
 
             with torch.no_grad():
@@ -273,7 +306,7 @@ class CornacCFNet(Recommender):
             # 특정 user-item 쌍에 대한 점수 계산
             if user_idx >= self.train_set.num_users:
                 raise ScoreException(f"Unknown user: {user_idx}")
-            if item_idx >= self.train_set.num_items:
+            if item_idx >= self.model_num_items:
                 raise ScoreException(f"Unknown item: {item_idx}")
 
             with torch.no_grad():

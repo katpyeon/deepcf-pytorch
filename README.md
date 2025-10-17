@@ -100,7 +100,7 @@ deepcf-pytorch/
 
 **추가 샘플 생성이 필요한 경우:**
 ```bash
-jupyter notebook data_sampling.ipynb
+data_sampling.ipynb
 ```
 
 ---
@@ -127,7 +127,7 @@ jupyter notebook data_sampling.ipynb
 1. `cornac/cornac_eval.ipynb` 열기
 2. **Cell 2**에서 `DATASET` 변수 수정:
    ```python
-   DATASET = 'ml-1m-sample100'  # 샘플 크기 조정
+   DATASET = 'ml-1m'  # 샘플 크기 조정
    ```
 3. 모든 셀 실행
 4. 결과 테이블 확인 및 `cornac/CornacExp-*.log` 저장
@@ -215,8 +215,8 @@ DMF와 MLP를 **결합한 CFNet**을 학습합니다.
 
 **권장 워크플로우:**
 ```
-1. DMF 학습 → pretrain/ml-1m-sample100-rl.pth
-2. MLP 학습 → pretrain/ml-1m-sample100-ml.pth
+1. DMF 학습 → pretrain/ml-1m-rl.pth
+2. MLP 학습 → pretrain/ml-1m-ml.pth
 3. CFNet Pretrain 학습 (최고 성능)
 ```
 
@@ -306,13 +306,7 @@ LEARNER = 'adam'
 - [x] PyTorch 구현 검증 (원본 TensorFlow와 비교)
 
 ### 📝 알려진 이슈
-- Pretrain dimension 불일치 ([cornac/PRETRAIN_DIMENSION_ISSUE.md](cornac/PRETRAIN_DIMENSION_ISSUE.md) 참고)
 - Pretrain 로직 차이 ([cfnet/PRETRAIN_LOGIC_DIFFERENCE.md](cfnet/PRETRAIN_LOGIC_DIFFERENCE.md) 참고)
-
-### 🔮 향후 계획
-- [ ] Pretrain dimension 이슈 해결
-- [ ] 추가 데이터셋 지원 (Amazon, Netflix)
-- [ ] 전체 데이터셋 실험 결과 추가
 
 ## 📄 인용
 
