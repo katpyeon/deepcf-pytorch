@@ -80,8 +80,8 @@ dmypy.json
 # Cornac experiment logs
 cornac/CornacExp-*.log
 
-# Model checkpoints (optional - currently included in repo)
-# pretrain/*.pth
+# Model checkpoints (large files - excluded from repo)
+pretrain/*.pth
 
 # Large datasets (optional - currently included in repo)
 # datasets/*.rating

@@ -77,10 +77,12 @@ deepcf-pytorch/
 │   ├── ml-1m-sample500.*               # 샘플: 500명 유저
 │   └── ml-1m-sample1000.*              # 샘플: 1000명 유저
 │
-└── pretrain/                           # 사전 학습된 모델 체크포인트
-    ├── {dataset}-rl.pth                # DMF 모델
-    └── {dataset}-ml.pth                # MLP 모델
+└── pretrain/                           # 사전 학습된 모델 체크포인트 (.pth)
+    ├── {dataset}-rl.pth                # DMF 모델 (직접 학습하여 생성)
+    └── {dataset}-ml.pth                # MLP 모델 (직접 학습하여 생성)
 ```
+
+> **참고:** `.pth` 파일은 용량이 크기 때문에 Git 저장소에 포함되지 않습니다. 아래 학습 가이드를 따라 직접 생성하세요.
 
 ## 🚀 빠른 시작
 
@@ -149,7 +151,7 @@ DMF 모델을 **단독으로 학습**하고 평가합니다.
 1. `cfnet_rl/dmf_train.ipynb` 열기
 2. **Cell 4**에서 `dataset_name` 수정:
    ```python
-   dataset_name = 'ml-1m-sample100'  # 샘플 크기 조정
+   dataset_name = 'ml-1m'  # 또는 'ml-1m-sample100'
    ```
 3. 하이퍼파라미터 조정 (필요 시):
    ```python
@@ -159,6 +161,7 @@ DMF 모델을 **단독으로 학습**하고 평가합니다.
    LEARNING_RATE = 0.0001
    ```
 4. 모든 셀 실행
+5. **결과:** `pretrain/ml-1m-rl.pth` 파일 생성 (약 200MB)
 
 ---
 
@@ -177,7 +180,7 @@ MLP 모델을 **단독으로 학습**하고 평가합니다.
 1. `cfnet_ml/mlp_train.ipynb` 열기
 2. **Cell 4**에서 `dataset_name` 수정:
    ```python
-   dataset_name = 'ml-1m-sample100'  # 샘플 크기 조정
+   dataset_name = 'ml-1m'  # 또는 'ml-1m-sample100'
    ```
 3. 하이퍼파라미터 조정 (필요 시):
    ```python
@@ -186,6 +189,7 @@ MLP 모델을 **단독으로 학습**하고 평가합니다.
    LEARNING_RATE = 0.001
    ```
 4. 모든 셀 실행
+5. **결과:** `pretrain/ml-1m-ml.pth` 파일 생성 (약 180MB)
 
 ---
 
@@ -204,8 +208,8 @@ DMF와 MLP를 **결합한 CFNet**을 학습합니다.
 1. `cfnet/cfnet_train.ipynb` 열기
 2. **Cell 4**에서 설정 수정:
    ```python
-   dataset_name = 'ml-1m-sample100'  # 샘플 크기 조정
-   USE_PRETRAIN = True              # Pretrain 적용 여부
+   dataset_name = 'ml-1m'  # 또는 'ml-1m-sample100'
+   USE_PRETRAIN = True     # Pretrain 적용 여부
    ```
 3. **Pretrain 사용 시 주의:**
    - 먼저 `cfnet_rl/dmf_train.ipynb` 실행 → `pretrain/{dataset}-rl.pth` 생성
@@ -213,12 +217,14 @@ DMF와 MLP를 **결합한 CFNet**을 학습합니다.
    - 그 다음 CFNet 학습
 4. 모든 셀 실행
 
-**권장 워크플로우:**
+**권장 워크플로우 (최고 성능):**
 ```
-1. DMF 학습 → pretrain/ml-1m-rl.pth
-2. MLP 학습 → pretrain/ml-1m-ml.pth
-3. CFNet Pretrain 학습 (최고 성능)
+1. DMF 학습 (3️⃣) → pretrain/ml-1m-rl.pth (약 200MB)
+2. MLP 학습 (4️⃣) → pretrain/ml-1m-ml.pth (약 180MB)
+3. CFNet Pretrain 학습 (5️⃣) - 두 모델 결합
 ```
+
+> **중요:** `.pth` 파일은 Git에 포함되지 않으므로, CFNet pretrain 모드를 사용하려면 반드시 DMF와 MLP를 먼저 학습해야 합니다.
 
 ## 📦 모델 아키텍처
 
